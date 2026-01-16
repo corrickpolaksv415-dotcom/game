@@ -45,12 +45,13 @@ import { GameService } from '../../services/game.service';
                    'text-red-500': game.impactType() === 'physical',
                    'text-purple-400': game.impactType() === 'magical',
                    'text-green-400': game.impactType() === 'heal',
-                   'text-yellow-400': game.impactType() === 'shield'
+                   'text-yellow-400': game.impactType() === 'shield',
+                   'text-orange-400': game.impactType() === 'debuff',
+                   'text-blue-400': game.impactType() === 'buff'
                  }">
                  {{ game.impactValue() }}
               </span>
             </div>
-            <!-- Particle Burst -->
              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-white/20 rounded-full animate-ping-slow pointer-events-none"></div>
           }
 
@@ -68,6 +69,16 @@ import { GameService } from '../../services/game.service';
             <!-- Subject Badge -->
             <div class="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-1 rounded-full border border-red-400 font-bold shadow-lg">
               {{ game.enemy()?.subject }}
+            </div>
+
+            <!-- Enemy Status Effects -->
+            <div class="absolute top-0 -left-12 w-10 flex flex-col gap-1">
+               @for (effect of game.enemyEffects(); track effect.id) {
+                 <div class="bg-black/60 rounded p-1 text-center animate-fade-in border border-gray-600/50">
+                    <div class="text-lg">{{ effect.icon }}</div>
+                    <div class="text-[10px] font-bold text-gray-300">{{ effect.duration }}</div>
+                 </div>
+               }
             </div>
             
             <div class="absolute -bottom-2 w-full text-center">
@@ -100,12 +111,25 @@ import { GameService } from '../../services/game.service';
       <!-- 4. Player HUD (Bottom) -->
       <div class="bg-gray-900 border-t border-gray-800 p-4 pb-6 z-10 shadow-[0_-10px_50px_rgba(0,0,0,0.6)] relative">
         
-        <!-- Player Impact Overlay (Damage Taken) -->
+        <!-- Player Impact Overlay -->
         @if (game.animationState() === 'enemy_impact') {
            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-12 z-50 animate-pop-up">
               <span class="text-4xl font-bold text-red-500 shadow-text">{{ game.impactValue() }}</span>
            </div>
         }
+
+        <!-- Player Status Effects (Above Bar) -->
+        <div class="max-w-5xl mx-auto flex gap-2 mb-2 px-2 h-8">
+           @for (effect of game.playerEffects(); track effect.id) {
+             <div class="bg-gray-800 rounded px-2 py-0.5 flex items-center gap-2 border border-blue-500/50 animate-fade-in shadow-lg">
+                <span class="text-lg">{{ effect.icon }}</span>
+                <div class="flex flex-col leading-none">
+                  <span class="text-[10px] text-gray-300 font-bold">{{ effect.name }}</span>
+                  <span class="text-[9px] text-gray-500">{{ effect.duration }} 回合</span>
+                </div>
+             </div>
+           }
+        </div>
 
         <!-- Player Stats -->
         <div class="max-w-5xl mx-auto flex items-center gap-6 mb-4 px-2">
@@ -157,6 +181,11 @@ import { GameService } from '../../services/game.service';
                 {{ card.subject }}
               </div>
 
+              <!-- Level Tag -->
+              <div class="absolute top-0 left-0 bg-blue-900/80 text-[10px] px-1.5 py-0.5 rounded-br text-blue-200 font-mono border-b border-r border-blue-700">
+                Lv.{{ card.level }}
+              </div>
+
               <div class="mt-4 text-sm font-bold text-gray-100 group-hover:text-yellow-300 leading-tight">
                 {{ card.name }}
               </div>
@@ -177,30 +206,27 @@ import { GameService } from '../../services/game.service';
                   'bg-red-500': card.skill.type === 'damage' || card.skill.type === 'risky',
                   'bg-green-500': card.skill.type === 'heal',
                   'bg-yellow-500': card.skill.type === 'shield',
-                  'bg-blue-500': card.skill.type === 'draw'
+                  'bg-blue-500': card.skill.type === 'buff',
+                  'bg-orange-500': card.skill.type === 'debuff',
+                  'bg-cyan-500': card.skill.type === 'draw'
                 }"></div>
             </button>
           }
         </div>
       </div>
 
-      <!-- 5. Active Card Animation Overlay (The "Focus" View) -->
+      <!-- Active Card Overlay (Unchanged template, just kept for context) -->
       @if (game.activeCard(); as active) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-none animate-fade-in-fast">
           <div class="w-64 h-96 bg-gray-800 rounded-2xl border-2 border-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.5)] p-4 flex flex-col relative animate-card-zoom">
-            
-            <!-- Glow Effect -->
             <div class="absolute -inset-4 bg-blue-500/30 blur-xl -z-10 rounded-full animate-pulse-fast"></div>
-
             <div class="flex justify-between items-center mb-4">
               <span class="text-xl font-bold text-white">{{ active.name }}</span>
               <span class="bg-blue-600 text-white px-2 py-1 rounded text-xs">{{ active.subject }}</span>
             </div>
-            
             <div class="flex-1 flex items-center justify-center my-4">
                <div class="text-6xl animate-bounce-soft">✨</div>
             </div>
-
             <div class="bg-gray-900/80 p-3 rounded-lg border border-gray-700">
                <div class="text-yellow-400 font-bold mb-1">{{ active.skill.name }}</div>
                <div class="text-gray-300 text-sm">{{ active.skill.description }}</div>
@@ -220,15 +246,21 @@ import { GameService } from '../../services/game.service';
                [class.bg-green-500]="game.battleResult() === 'win'"
                [class.bg-red-500]="game.battleResult() === 'lose'"></div>
 
-            <h2 class="text-4xl font-bold mb-4 relative z-10"
+            <h2 class="text-4xl font-bold mb-2 relative z-10"
                 [class.text-green-400]="game.battleResult() === 'win'"
                 [class.text-red-500]="game.battleResult() === 'lose'">
                 {{ game.battleResult() === 'win' ? '考试通过!' : '挂科警告' }}
             </h2>
             
-            <p class="text-gray-300 mb-8 relative z-10">
-              {{ game.battleResult() === 'win' ? '你克服了难题，学识精进了！' : '这道题太难了，回去复习一下基础吧。' }}
-            </p>
+            <!-- EXP Logs -->
+            <div class="text-left bg-black/30 p-2 rounded mb-6 text-xs max-h-32 overflow-y-auto relative z-10 border border-white/10">
+               @for (log of game.expLogs(); track $index) {
+                 <div class="mb-1 text-yellow-200">{{ log }}</div>
+               }
+               @if (game.expLogs().length === 0 && game.battleResult() === 'lose') {
+                 <div class="text-gray-400">失败无法获得经验...</div>
+               }
+            </div>
 
             <button (click)="game.resetToDashboard()" 
               class="w-full py-3 rounded-lg font-bold text-white transition-all relative z-10 transform hover:scale-105"

@@ -35,12 +35,21 @@ import { GeminiService } from '../../services/gemini.service';
           </h3>
           <div class="grid grid-cols-1 gap-3">
             @for (card of user()?.cards; track card.id) {
-              <div class="bg-gray-700/80 p-3 rounded-lg border border-gray-600 hover:border-blue-500 transition-colors group cursor-default">
+              <div class="bg-gray-700/80 p-3 rounded-lg border border-gray-600 hover:border-blue-500 transition-colors group cursor-default relative overflow-hidden">
+                
                 <div class="flex justify-between items-start mb-2">
-                  <span class="font-bold text-blue-200">{{ card.name }}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-blue-200">{{ card.name }}</span>
+                    <span class="text-xs font-bold text-yellow-400">Lv.{{ card.level }}</span>
+                  </div>
                   <span class="text-[10px] font-mono bg-gray-900 px-1.5 py-0.5 rounded text-gray-400 border border-gray-700">{{ card.subject }}</span>
                 </div>
                 
+                <!-- Exp Bar -->
+                <div class="w-full h-1 bg-gray-900 rounded-full mb-2 overflow-hidden">
+                  <div class="bg-yellow-600 h-full" [style.width.%]="(card.exp / card.maxExp) * 100"></div>
+                </div>
+
                 <!-- Skill Mini View -->
                 <div class="bg-gray-800/50 rounded p-2 mb-2 border border-gray-700/50">
                   <div class="flex items-center gap-2 mb-1">
